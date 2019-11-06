@@ -1,0 +1,1 @@
+Next generation [reveal-app](https://github.com/patarapolw/reveal-app) that also works offline.
