@@ -10,11 +10,11 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
+    "allowJs": true,
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      "vuetify",
-      "node"
+      "vuetify"
     ],
     "paths": {
       "@/*": [

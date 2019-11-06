@@ -76,8 +76,7 @@ export default class App extends Vue {
       input.autocomplete = "off";
     });
 
-    g.user = await db.user.pouch.allDocs({limit: 1, include_docs: true}).then((r) => r.rows[0].doc) || {};
-
+    g.user = (await db.cols.user.find("", {limit: 1})).data[0] || {};
     this.isUserInit = !!g.user._id;
   }
 
@@ -106,13 +105,17 @@ export default class App extends Vue {
       const sArray = new Uint32Array(1);
       crypto.getRandomValues(sArray);
 
-      g.user._id = await db.user.create({
-        _id: await db.user.getSafeId(g.user.email),
+      const _id = await db.cols.user.getSafeId(g.user.email);
+
+      await db.cols.user.create({
+        _id,
         email: g.user.email,
         secret: sArray[0].toString(16),
         type: "admin",
         ...g.user
       });
+
+      g.user._id = _id;
 
       this.isUserInit = true;
       location.reload();

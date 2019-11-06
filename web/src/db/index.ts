@@ -1,14 +1,24 @@
-import PouchDB from "pouchdb";
-import QParser, { ISortOptions, IQParserOptions } from "q2filter";
 import UrlSafeString from "url-safe-string";
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
+import firebase, { firestore } from "firebase/app";
+import "firebase/auth";
+import "firebase/firestore";
+import "firebase/storage";
+import moment from "moment";
+import { parseDuration } from "./xmoment";
+import { firebaseConfig } from "./config.secret";
+
+firebase.initializeApp(firebaseConfig);
 
 const uss = new UrlSafeString({
   regexRemovePattern: /((?!([a-z0-9.])).)/gi
 });
 
-const COUCH_DB_URL = "";
+export interface ISortOptions {
+  key: string;
+  desc: boolean;
+}
 
 export interface IFindOptions {
   offset: number;
@@ -18,82 +28,99 @@ export interface IFindOptions {
 }
 
 export type TimeStamp<T> = T & {
-  createdAt: string;
-  updatedAt?: string;
+  createdAt: any;
+  updatedAt?: any;
 }
 
-class Collection<T extends {_id: string, tags?: string[]}> {
-  public pouch: PouchDB.Database<TimeStamp<T>>;
+class Collection<T extends {_id: string, tag?: string[]}> {
+  ref: firestore.CollectionReference;
 
-  constructor(public name: string, public options: {
-    parseQ: Partial<IQParserOptions<TimeStamp<T>>>;
-  }) {
-    this.pouch = new PouchDB<TimeStamp<T>>(name);
+  constructor(public firestore: firestore.Firestore, public name: string) {
+    this.ref = firestore.collection(name);
   }
 
-  get couchUrl() {
-    return `${COUCH_DB_URL}/${this.name}`;
-  }
+  async find(q: string, options: Partial<IFindOptions> = {}) {
+    const sortBy = (() => {
+      const m = /(?:^| |\()(-)?sort:([A-Z.]+)(?:$| |\))/i.exec(q);
+      if (m) {
+        const [all, desc, key] = m;
+        q = q.replace(all, "");
 
-  async init() {
-    if (COUCH_DB_URL) {
-      const r = await this.pouch.replicate.from(this.couchUrl, {live: true});
-      this.pouch.replicate.to(this.couchUrl, {live: true});
-
-      return r.ok;
-    }
-
-    return false;
-  }
-
-  async find(q: string | Record<string, any>, options: Partial<IFindOptions> = {}) {
-    const qp = new QParser<TimeStamp<T>>(q, this.options.parseQ);
-    const sortBy = qp.result.sortBy || {
+        return {
+          key,
+          desc: !!desc
+        };
+      }
+    })() || {
       key: "updatedAt",
       desc: true
     };
 
-    const r = await this.pouch.query<TimeStamp<T>>((doc, emit) => {
-      if (emit && qp.filter(doc)) {
-        Object.keys(doc).forEach((k) => {
-          if (options.fields) {
-            if (!options.fields.includes(k)) {
-              delete (doc as any)[k];
-            }
-          }
-        });
+    let r = this.ref.orderBy(sortBy.key, sortBy.desc ? "desc" : "asc");
 
-        emit((doc as any)[sortBy.key], doc);
+    await (async () => {
+      const regex = /(?:^| |\()([A-Z.]+)(<|<=|>|>=|==|:)(\S+|"[^"]+"|'[^']+')(?:$| |\))/gi;
+      let m: RegExpExecArray | null = null;
+      while (m = regex.exec(q)) {
+        let [all, key, op, value] = m as any[];
+        if (/^\d+(?:\.\d+)?$/.exec(value)) {
+          value = parseFloat(value);
+        }
+
+        if (op === ":") {
+          if (key === "tag") {
+            op = "array-contains";
+          } else if (["date", "createdAt", "updatedAt"].includes(key)) {
+            const diff = parseDuration(value.toString());
+            if (diff) {
+              const timestamp = await this.getTimestamp();
+              r = r
+              .where(key, ">", timestamp.add(diff).add(-12, "hour").toDate())
+              .where(key, "<", timestamp.add(diff).add(+12, "hour").toDate());
+              continue;
+            }
+          } else {
+            op = "==";
+          }
+        }
+
+        r = r.where(key, op, value);
       }
-    }, {
-      skip: options.offset,
-      limit: options.limit || 10,
-      descending: sortBy.desc
-    });
+    })();
+
+    const startAt = options.offset || 0;
+    let endBefore: number | undefined = undefined;
+
+    if (options.limit !== null) {
+      endBefore = startAt + (options.limit || 10);
+    }
+
+    const snapShot = await r.get();
 
     return {
-      data: Array.from(r.rows.values()).map((el) => el.value),
-      count: r.total_rows
+      data: snapShot.docs.slice(startAt, endBefore).map((d) => d.data()) as TimeStamp<T>[],
+      count: snapShot.size
     };
   }
 
-  async get(id: string) {
-    return await this.pouch.get(id)
+  async get(id: string): Promise<TimeStamp<T> | null> {
+    const doc = await this.ref.doc(id).get();
+    return doc.exists ? doc.data() as any || null : null;
   }
 
   async create(entry: T) {
-    return (await this.pouch.put({
+    return await this.ref.doc(entry._id).set({
       ...entry,
-      createdAt: new Date().toISOString()
-    })).id;
+      createdAt: firestore.FieldValue.serverTimestamp()
+    });
   }
 
   async getSafeId(title?: string) {
-    const ids = (await this.pouch.allDocs()).rows.map((r) => r.id);
+    const ids = (await this.ref.get()).docs.map((d) => d.id);
 
     let outputId = title ? uss.generate(pinyin(title, {
       keepRest: true, toneToNumber: true
-    })) : "";
+    })) as string : "";
   
     while (ids.includes(outputId)) {
       const m = /-(\d+)$/.exec(outputId);
@@ -110,20 +137,20 @@ class Collection<T extends {_id: string, tags?: string[]}> {
   }
 
   async update(id: string, u: Partial<T>) {
-    return await this.pouch.get(id).then((d) => {
-      Object.assign(d, JSON.parse(JSON.stringify(u)));
-      return this.pouch.put(d);
-    })
+    return await this.ref.doc(id).update({
+      ...JSON.parse(JSON.stringify(u)),
+      updatedAt: firestore.FieldValue.serverTimestamp()
+    });
   }
 
   async delete(id: string) {
-    return await this.pouch.get(id).then((d) => {
-      return this.pouch.remove(d);
-    })
+    await this.ref.doc(id).delete();
   }
 
   async addTag(id: string, tags: string[]) {
-    return await this.pouch.get(id).then((d) => {
+    return await this.ref.doc(id).get().then((snapShot) => {
+      const d = snapShot.data()!;
+
       if (d.tags) {
         for (const t of d.tags) {
           if (!tags.includes(t)) {
@@ -134,12 +161,14 @@ class Collection<T extends {_id: string, tags?: string[]}> {
         d.tags = tags;
       }
 
-      return this.pouch.put(d);
+      return this.ref.doc(id).set(d);
     });
   }
 
   async removeTag(id: string, tags: string[]) {
-    return await this.pouch.get(id).then((d) => {
+    return await this.ref.doc(id).get().then((snapShot) => {
+      const d = snapShot.data()!;
+
       if (d.tags) {
         const newTags: string[] = [];
         for (const t of d.tags) {
@@ -155,8 +184,16 @@ class Collection<T extends {_id: string, tags?: string[]}> {
         }
       }
 
-      return this.pouch.put(d);
+      return this.ref.doc(id).set(d);
     });
+  }
+
+  async getTimestamp() {
+    await this.firestore.collection(".info").doc("server").set({
+      timestamp: firestore.FieldValue.serverTimestamp()
+    });
+    const data = (await this.firestore.collection(".info").doc("server").get()).data();
+    return data ? moment(data.timestamp) : moment();
   }
 }
 
@@ -184,21 +221,20 @@ export interface IPost {
 }
 
 class Database {
-  user = new Collection<IUser>("user", {parseQ: {
-    anyOf: ["email", "info.name", "info.website", "tag"],
-    isString: ["email", "info.name", "info.website", "tag"]
-  }});
+  firestore: firebase.firestore.Firestore;
 
-  post = new Collection<IPost>("post", {parseQ: {
-    anyOf: ["title", "type", "tag"],
-    isString: ["title", "type", "tag"]
-  }})
+  cols: {
+    user: Collection<IUser>;
+    post: Collection<IPost>;
+  }
 
-  async init() {
-    return await Promise.all([
-      this.user.init(),
-      this.post.init()
-    ]).then((r) => r.every((it) => it));
+  constructor() {
+    this.firestore = firestore();
+    
+    this.cols = {
+      user: new Collection(this.firestore, "user"),
+      post: new Collection(this.firestore, "post")
+    }
   }
 }
 
