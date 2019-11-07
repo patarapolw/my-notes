@@ -161,8 +161,12 @@ export default class BlogView extends Vue {
     this.newTags = "";
   }
 
-  remove() {
+  async remove() {
+    await Promise.all(this.selected.map(async (el) => {
+      await db.cols.post.delete(el._id);
+    }));
 
+    this.load();
   }
 
   clickRow(data: any) {

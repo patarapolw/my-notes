@@ -41,3 +41,99 @@ export interface IMedia {
   name: string;
   tag?: string[];
 }
+
+class Collection<T extends {_id: string, tag?: string[]}> {
+  constructor(public name: string) {}
+
+  async find(q: string, options: Partial<IFindOptions> = {}): Promise<{
+    data: TimeStamp<T>[];
+    count: number;
+  }> {
+    return await fetchJSON(`/api/${this.name}/`, {q, options});
+  }
+
+  async get(id: string): Promise<TimeStamp<T> | null> {
+    return await fetchJSON(`/api/${this.name}/${id}`);
+  }
+
+  async create(entry: T): Promise<{id: string}> {
+    return await fetchJSON(`/api/${this.name}/`, entry, "PUT");
+  }
+
+  async getSafeId(title?: string) {
+    return await fetchJSON(`/api/${this.name}/safeId`, {title}, "GET");
+  }
+
+  async update(id: string, update: Partial<T>) {
+    return await fetchJSON(`/api/${this.name}/${id}`, update, "PUT");
+  }
+
+  async delete(id: string) {
+    return await fetchJSON(`/api/${this.name}/${id}`, null, "DELETE");
+  }
+
+  async addTag(id: string, tag: string[]) {
+    return await fetchJSON(`/api/${this.name}/${id}/tag`, {tag}, "PUT");
+  }
+
+  async removeTag(id: string, tag: string[]) {
+    return await fetchJSON(`/api/${this.name}/${id}/tag`, {tag}, "PUT");
+  }
+}
+
+export default class Database {
+  cols: {
+    // user: Collection<IUser>;
+    post: Collection<IPost>;
+    media: Collection<IMedia>;
+  }
+
+  constructor() {
+    this.cols = {
+      // user: new Collection("user"),
+      post: new Collection("post"),
+      media: new Collection("media")
+    }
+  }
+
+  async uploadMedia(data: File, tag?: string[]) {
+    const formData = new FormData();
+    formData.append("file", data);
+    formData.append("tag", tag ? JSON.stringify(tag) : "");
+    const r = await fetch("/api/media/", {
+      method: "PUT",
+      body: formData
+    }).then((r) => r.json());
+
+    return `/api/media/${r.id}`;
+  }
+}
+
+const fetchJSON = async (url: string, data?: Record<string, any> | null, method: string = "POST") => {
+  let r: Response;
+  if (method !== "GET") {
+    r = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: data ? JSON.stringify(data) : undefined
+    });
+  } else {
+    const newUrl = new URL(url, location.origin);
+    if (data) {
+      for (const [k, v] of Object.entries<string>(data)) {
+        if (v) {
+          newUrl.searchParams.set(k, v);
+        }
+      }
+    }
+    r = await fetch(newUrl.href);
+  }
+
+  try {
+    return await r.json();
+  } catch(e) {
+    return r;
+  }
+}

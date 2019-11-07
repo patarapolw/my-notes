@@ -7,7 +7,7 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
-    "@my-notes/db": "file:../lib/_local/db",
+    "@patarapolw/my-notes__db": "file:../lib/_local/db",
     "@patarapolw/reveal-md": "^0.1.4",
     "@types/codemirror": "0.0.80",
     "@types/showdown": "^1.9.3",

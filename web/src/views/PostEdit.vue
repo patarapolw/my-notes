@@ -280,7 +280,8 @@ export default class PostEdit extends Vue {
         });
       } else {
         const {id} = await db.cols.post.create({
-          _id: await db.cols.post.getSafeId(this.headers.title),
+          ...this.headers,
+          _id: (await db.cols.post.getSafeId(this.headers.title)).id,
           title: this.headers.title,
           headers: this.headers,
           content: this.code

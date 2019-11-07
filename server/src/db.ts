@@ -4,7 +4,7 @@ import QParser, { IQParserOptions } from "q2filter";
 import UrlSafeString from "url-safe-string";
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
-import { TimeStamp, IFindOptions, IPost, IMedia } from "@my-notes/db";
+import { TimeStamp, IFindOptions, IPost, IMedia } from "@patarapolw/my-notes__db";
 import { Router, Express } from "express";
 import bodyParser from "body-parser";
 import { CONFIG } from "../../config";
@@ -320,8 +320,8 @@ export class Database {
         }
       });
 
-      app.use("/api", router);
       app.use("/api/media", mediaRouter);
+      app.use("/api", router);
     }
   }
 }

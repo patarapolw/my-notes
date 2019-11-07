@@ -1,8 +1,7 @@
 {
-  "name": "@my-notes/db",
+  "name": "@patarapolw/my-notes__db",
   "version": "1.0.0",
-  "description": "",
-  "private": true,
+  "description": "@my-notes/db",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
