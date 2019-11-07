@@ -1,8 +1,7 @@
+/// <reference types="./declaration" />
 import PouchDB from "pouchdb";
 import QParser, { IQParserOptions } from "q2filter";
-// @ts-ignore
 import UrlSafeString from "url-safe-string";
-// @ts-ignore
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
 import { TimeStamp, IFindOptions, IPost, IMedia } from "@my-notes/db";
@@ -11,6 +10,10 @@ import bodyParser from "body-parser";
 import { CONFIG } from "../../config";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import cors from "cors";
+import replicationStream from "pouchdb-replication-stream";
+
+PouchDB.plugin(replicationStream.plugin);
+PouchDB.adapter("writableStream", replicationStream.adapters.writableStream);
 
 const StoragePouchDB = PouchDB.defaults({prefix: CONFIG.storage});
 
@@ -31,7 +34,7 @@ class Collection<T extends {_id: string, tag?: string[]}> {
     return `${CONFIG.couch}/${this.name}`;
   }
 
-  async init(app: Router) {
+  async init(app?: Router) {
     if (CONFIG.couch) {
       const r = await this.pouch.replicate.from(this.couchUrl);
       this.pouch.replicate.to(this.couchUrl, {live: true});
@@ -253,64 +256,72 @@ export class Database {
     }})
   }
 
-  constructor(public app: Express) {}
+  get pouch() {
+    return Object.values(this.cols).map((el) => el.pouch);
+  }
 
-  async init() {
-    const router = Router();
-    router.use(bodyParser.json());
-    router.use(cors({
-      origin: /\/\/localhost/
-    }));
+  async init(app?: Express) {
+    let router: Router | undefined = undefined;
+
+    if (app) {
+      router = Router();
+      router.use(bodyParser.json());
+      router.use(cors({
+        origin: /\/\/localhost/
+      }));
+    }
 
     await Promise.all(Object.values(this.cols).map((el) => el.init(router)));
 
-    const mediaRouter = Router();
-    mediaRouter.use(fileUpload());
-    mediaRouter.get("/:id", async (req, res, next) => {
-      try {
-        const p = await this.cols.media.pouch.get(req.params.id, {attachments: true, binary: true});
-        const a = Object.values(p._attachments)[0];
-        return res.send(p ? a.data : "");
-      } catch(e) {
-        return next(e);
-      }
-    });
-    mediaRouter.put("/", async (req, res, next) => {
-      try {
-        const file = req.files!.file as UploadedFile;
-        let {name, data} = file;
-    
-        if (name === "image.png") {
-          name = new Date().toISOString();
+    if (app && router) {
+      const mediaRouter = Router();
+      mediaRouter.use(fileUpload());
+      mediaRouter.get("/:id", async (req, res, next) => {
+        try {
+          const p = await this.cols.media.pouch.get(req.params.id, {attachments: true, binary: true});
+          const a = Object.values(p._attachments)[0];
+          return res.send(p ? a.data : "");
+        } catch(e) {
+          return next(e);
         }
-    
-        const { tag } = req.body;
-        let realTag: string[] | undefined = undefined;
-        if (tag) {
-          realTag = JSON.parse(tag);
-        }
-    
-        const p = await this.cols.media.create({
-          _id: (await this.cols.media.getSafeId(name)).id,
-          name,
-          tag: realTag,
-          _attachments: {
-            [name]: {
-              content_type: file.mimetype,
-              data
-            }
+      });
+      mediaRouter.put("/", async (req, res, next) => {
+        try {
+          const file = req.files!.file as UploadedFile;
+          let {name, data} = file;
+      
+          if (name === "image.png") {
+            name = new Date().toISOString();
           }
-        });
-        
-        return res.json({
-          id: p.id
-        });
-      } catch(e) {
-        return next(e);
-      }
-    });
+      
+          const { tag } = req.body;
+          let realTag: string[] | undefined = undefined;
+          if (tag) {
+            realTag = JSON.parse(tag);
+          }
+      
+          const p = await this.cols.media.create({
+            _id: (await this.cols.media.getSafeId(name)).id,
+            name,
+            tag: realTag,
+            _attachments: {
+              [name]: {
+                content_type: file.mimetype,
+                data
+              }
+            }
+          });
+          
+          return res.json({
+            id: p.id
+          });
+        } catch(e) {
+          return next(e);
+        }
+      });
 
-    this.app.use("/api", router);
-    this.app.use("/api/media", mediaRouter);
+      app.use("/api", router);
+      app.use("/api/media", mediaRouter);
+    }
   }
 }
