@@ -46,12 +46,8 @@ Vue.use(VueCodemirror, {
   }
 });
 
-(async () => {
-  await db.init();
-
-  new Vue({
-    router,
-    vuetify,
-    render: h => h(App)
-  }).$mount('#app');
-})().catch(console.error);
+new Vue({
+  router,
+  vuetify,
+  render: h => h(App)
+}).$mount('#app');

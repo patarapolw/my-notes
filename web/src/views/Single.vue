@@ -32,10 +32,10 @@ export default class Search extends Vue {
 
   @Watch("id")
   async mounted() {
-    const r = await db.cols.post.get(this.id);
+    const r = (await db.cols.post.get(this.id)) || {} as any;
 
-    this.title = r.title;
-    this.content = r.content;
+    this.title = r.title || "";
+    this.content = r.content || "";
   }
 
   get id() {

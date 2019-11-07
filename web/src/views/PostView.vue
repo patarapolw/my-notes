@@ -3,7 +3,7 @@ v-container.d-flex.flex-column.pa-0
   div(style="position: fixed; z-index: 100; width: calc(100% - 256px); padding: 10px")
     v-toolbar.elevation-1
       v-spacer
-      v-btn(text to="/admin/post/edit" target="_blank") New
+      v-btn(text to="/post/edit" target="_blank") New
       v-btn(text @click="load") Reload
       v-toolbar-items
         v-menu(offset-y)
@@ -77,7 +77,7 @@ export default class BlogView extends Vue {
 
   mounted() {
     this.load();
-    setTitle("");
+    setTitle("Post Viewer");
   }
 
   @Watch("$route", {deep: true})
@@ -88,7 +88,7 @@ export default class BlogView extends Vue {
       const {q, page, limit, sortBy, desc} = this.$route.query;
       const perPage = limit ? parseInt(limit as string) : 10;
 
-      const r = await db.cols.post.find(q as string, {
+      const r = await db.cols.post.find(q as string || "", {
         offset: page ? (parseInt(page as string) - 1) * perPage : 0,
         limit: perPage,
         sort: sortBy ? {
@@ -166,7 +166,7 @@ export default class BlogView extends Vue {
   }
 
   clickRow(data: any) {
-    const url = this.$router.resolve({path: "/admin/post/edit", query: {id: data._id}});
+    const url = this.$router.resolve({path: "/post/edit", query: {id: data._id}});
     open(url.href, "_blank");
   }
 }

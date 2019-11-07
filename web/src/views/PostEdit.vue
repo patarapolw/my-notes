@@ -227,7 +227,7 @@ export default class PostEdit extends Vue {
       const url = `/api/post/${id}`;
 
       try {
-        const {title, date, tag, type, content} = await db.cols.post.get(id as string);
+        const {title, date, tag, type, content} = (await db.cols.post.get(id as string)) || {} as any;
 
         const m = matter(content);
         this.code = matter.stringify(m.content, clone({...m.data, title, date, tag, type}));

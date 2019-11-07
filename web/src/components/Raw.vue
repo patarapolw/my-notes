@@ -2,7 +2,7 @@
 import { Vue, Component, Prop, Emit } from "vue-property-decorator";
 import MakeHTML from "../lib/make-html";
 
-let makeHTML: MakeHTML;
+const makeHTML = new MakeHTML();
 
 @Component
 export default class Raw extends Vue {

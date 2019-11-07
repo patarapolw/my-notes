@@ -31,7 +31,7 @@ class Collection<T extends {_id: string, tag?: string[]}> {
     return `${CONFIG.couch}/${this.name}`;
   }
 
-  async init(app?: Router) {
+  async init(app: Router) {
     if (CONFIG.couch) {
       const r = await this.pouch.replicate.from(this.couchUrl);
       this.pouch.replicate.to(this.couchUrl, {live: true});
@@ -253,7 +253,7 @@ export class Database {
     }})
   }
 
-  constructor(private app: Express) {}
+  constructor(public app: Express) {}
 
   async init() {
     const router = Router();
@@ -262,7 +262,7 @@ export class Database {
       origin: /\/\/localhost/
     }));
 
-    await Promise.all(Object.values(this.cols).map((el) => el.init(this.app)));
+    await Promise.all(Object.values(this.cols).map((el) => el.init(router)));
 
     const mediaRouter = Router();
     mediaRouter.use(fileUpload());

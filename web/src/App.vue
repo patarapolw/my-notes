@@ -39,7 +39,8 @@ v-app
   v-app-bar(:clipped-left="isDrawer" app color="orange" dark)
     v-toolbar-title.mr-3
       v-app-bar-nav-icon.mr-2(@click.stop="isDrawer = !isDrawer")
-      span.hidden-md-and-down(style="cursor: pointer;" @click="$router.push('/')") My-Notes
+      span.hidden-md-and-down
+        router-link(:to="$router.resolve('/').href" style="text-decoration: none; color: inherit;") My Notes
     .flex-grow-1
     v-text-field.col-lg-4(flat solo-inverted hide-details prepend-inner-icon="mdi-magnify" label="Search"
       v-model="g.q" @keydown="onSearchKeydown")
@@ -124,3 +125,52 @@ export default class App extends Vue {
   // }
 }
 </script>
+
+<style lang="scss">
+a {
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+}
+
+iframe {
+  border: none;
+  border-width: 0;
+}
+
+pre {
+  white-space: pre-wrap;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.click-table {
+  width: 100%;
+
+  tbody tr {
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgb(219, 236, 241) !important;
+    }
+  }
+}
+
+.CodeMirror {
+  .cm-tab {
+    background: gray;
+  }
+}
+
+input {
+  caret-color: gray;
+}
+</style>

@@ -72,7 +72,7 @@ export default class BlogView extends Vue {
 
   mounted() {
     this.load();
-    setTitle("");
+    setTitle("Media Viewer");
   }
 
   @Watch("$route", {deep: true})
@@ -83,7 +83,7 @@ export default class BlogView extends Vue {
       const {q, page, limit, sortBy, desc} = this.$route.query;
       const perPage = limit ? parseInt(limit as string) : 10;
 
-      const r = await db.cols.media.find(q as string, {
+      const r = await db.cols.media.find(q as string || "", {
         offset: page ? (parseInt(page as string) - 1) * perPage : 0,
         limit: perPage,
         sort: sortBy ? {

@@ -66,8 +66,8 @@ export default class Reveal extends Vue {
   async onTitleChange() {
     setTitle(`${this.title ? `${this.title} - ` : ""}Quiz`);
     if (this.id) {
-      const r = await db.cols.post.get(this.id);
-      const m = matter(r.content);
+      const r = (await db.cols.post.get(this.id)) || {} as any;
+      const m = matter(r.content || "");
       this.html = m.content;
     }
   }

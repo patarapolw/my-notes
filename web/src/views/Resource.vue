@@ -55,8 +55,8 @@ export default class App extends Vue {
   @Watch("$route", {deep: true})
   async onRouteChanged() {
     if (this.id) {
-      const r = await db.cols.post.get(this.id);
-      this.html = matter(r.content).content;
+      const r = await db.cols.post.get(this.id) || {} as any;
+      this.html = matter(r.content || "").content;
     } else {
       this.html = "";
     }
