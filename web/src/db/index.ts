@@ -1,4 +1,4 @@
-import { TimeStamp, IFindOptions, IUser, IPost, IMedia } from "@my-notes/db";
+import { TimeStamp, IFindOptions, IPost, IMedia } from "@my-notes/db";
 import { fetchJSON } from '@/util';
 
 class Collection<T extends {_id: string, tag?: string[]}> {
@@ -42,14 +42,14 @@ class Collection<T extends {_id: string, tag?: string[]}> {
 
 class Database {
   cols: {
-    user: Collection<IUser>;
+    // user: Collection<IUser>;
     post: Collection<IPost>;
     media: Collection<IMedia>;
   }
 
   constructor() {
     this.cols = {
-      user: new Collection("user"),
+      // user: new Collection("user"),
       post: new Collection("post"),
       media: new Collection("media")
     }

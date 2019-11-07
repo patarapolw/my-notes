@@ -11,18 +11,6 @@ export declare type TimeStamp<T> = T & {
     createdAt: string;
     updatedAt?: string;
 };
-export interface IUser {
-    _id: string;
-    type?: string;
-    email: string;
-    picture?: string;
-    secret: string;
-    info?: {
-        name?: string;
-        website?: string;
-    };
-    tag?: string[];
-}
 export interface IPost {
     _id: string;
     title: string;

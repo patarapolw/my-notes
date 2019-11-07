@@ -5,7 +5,7 @@ import UrlSafeString from "url-safe-string";
 // @ts-ignore
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
-import { TimeStamp, IFindOptions, IUser, IPost, IMedia } from "@my-notes/db";
+import { TimeStamp, IFindOptions, IPost, IMedia } from "@my-notes/db";
 import { Router, Express } from "express";
 import bodyParser from "body-parser";
 import { CONFIG } from "../../config";
@@ -232,10 +232,10 @@ class Collection<T extends {_id: string, tag?: string[]}> {
 
 export class Database {
   cols = {
-    user: new Collection<IUser>("user", {parseQ: {
-      anyOf: ["email", "info.name", "info.website", "tag"],
-      isString: ["email", "info.name", "info.website", "tag"]
-    }}),
+    // user: new Collection<IUser>("user", {parseQ: {
+    //   anyOf: ["email", "info.name", "info.website", "tag"],
+    //   isString: ["email", "info.name", "info.website", "tag"]
+    // }}),
     post: new Collection<IPost>("post", {parseQ: {
       anyOf: ["title", "type", "tag"],
       isString: ["title", "type", "tag"]
@@ -296,7 +296,7 @@ export class Database {
           tag: realTag,
           _attachments: {
             [name]: {
-              content_type: req.headers["content-type"] || "image/png",
+              content_type: file.mimetype,
               data
             }
           }

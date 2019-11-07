@@ -1,4 +1,4 @@
-import { IUser } from '@my-notes/db';
+// import { IUser } from '@my-notes/db';
 import { fetchJSON } from './util';
 
 declare global {
@@ -11,8 +11,8 @@ window.fetchJSON = fetchJSON;
 
 export const g: {
   q: string;
-  user: Partial<IUser>
+  // user: Partial<IUser>
 } = {
   q: "",
-  user: {}
+  // user: {}
 };

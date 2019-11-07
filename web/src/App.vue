@@ -32,10 +32,10 @@ v-app
           v-icon mdi-github-circle
         v-list-item-content
           v-list-item-title GitHub
-    template(v-if="user" v-slot:append)
-      v-card
-        v-card-title Logged in
-        v-card-text {{user.email}}
+    //- template(v-if="user" v-slot:append)
+    //-   v-card
+    //-     v-card-title Logged in
+    //-     v-card-text user.email
   v-app-bar(:clipped-left="isDrawer" app color="orange" dark)
     v-toolbar-title.mr-3
       v-app-bar-nav-icon.mr-2(@click.stop="isDrawer = !isDrawer")
@@ -44,17 +44,18 @@ v-app
     v-text-field.col-lg-4(flat solo-inverted hide-details prepend-inner-icon="mdi-magnify" label="Search"
       v-model="g.q" @keydown="onSearchKeydown")
   v-content(fluid fill-height)
-    router-view(v-if="isUserInit")
-  v-dialog(v-model="isUserInit === false" max-width="800")
-    v-card
-      v-card-title Create new admin user
-      v-card-text
-        v-text-field(label="Name" :value="getUserDeep('info.name')" @input="setUserDeep('info.name', $event)")
-        v-text-field(label="Image" :value="g.user.picture" @input="$set(g.user, 'picture', $event)")
-        v-text-field(label="Email" :value="g.user.email" @input="$set(g.user, 'email', $event)")
-        v-text-field(label="Website" :value="getUserDeep('info.website')" @input="setUserDeep('info.website', $event)")
-      v-card-actions
-        v-btn(@click="onNewUserSaved") Save
+    router-view
+  //-   router-view(v-if="isUserInit")
+  //- v-dialog(v-model="isUserInit === false" max-width="800")
+  //-   v-card
+  //-     v-card-title Create new admin user
+  //-     v-card-text
+  //-       v-text-field(label="Name" :value="getUserDeep('info.name')" @input="setUserDeep('info.name', $event)")
+  //-       v-text-field(label="Image" :value="g.user.picture" @input="$set(g.user, 'picture', $event)")
+  //-       v-text-field(label="Email" :value="g.user.email" @input="$set(g.user, 'email', $event)")
+  //-       v-text-field(label="Website" :value="getUserDeep('info.website')" @input="setUserDeep('info.website', $event)")
+  //-     v-card-actions
+  //-       v-btn(@click="onNewUserSaved") Save
 </template>
 
 <script lang="ts">
@@ -67,7 +68,7 @@ import db from "./db";
 export default class App extends Vue {
   private isDrawer: boolean = this.$vuetify.breakpoint.lgAndUp;
   private g = g;
-  private isUserInit: boolean | null = null;
+  // private isUserInit: boolean | null = null;
 
   async mounted() {
     Array.from(document.getElementsByTagName("input")).forEach((input) => {
@@ -76,18 +77,18 @@ export default class App extends Vue {
       input.autocomplete = "off";
     });
 
-    g.user = (await db.cols.user.find("", {limit: 1})).data[0] || {};
-    this.isUserInit = !!g.user._id;
+    // g.user = (await db.cols.user.find("", {limit: 1})).data[0] || {};
+    // this.isUserInit = !!g.user._id;
   }
 
-  getUserDeep(path: string) {
-    return dotProp.get(g.user, path);
-  }
+  // getUserDeep(path: string) {
+  //   return dotProp.get(g.user, path);
+  // }
 
-  setUserDeep(path: string, value: string) {
-    dotProp.set(g.user, path, value);
-    this.$set(this.g, "user", g.user);
-  }
+  // setUserDeep(path: string, value: string) {
+  //   dotProp.set(g.user, path, value);
+  //   this.$set(this.g, "user", g.user);
+  // }
 
   @Watch("$route.path")
   onRouteChanged(to: string) {
@@ -100,26 +101,26 @@ export default class App extends Vue {
     }
   }
 
-  async onNewUserSaved() {
-    if (g.user.email) {
-      const sArray = new Uint32Array(1);
-      crypto.getRandomValues(sArray);
+  // async onNewUserSaved() {
+  //   if (g.user.email) {
+  //     const sArray = new Uint32Array(1);
+  //     crypto.getRandomValues(sArray);
 
-      const _id = await db.cols.user.getSafeId(g.user.email);
+  //     const _id = await db.cols.user.getSafeId(g.user.email);
 
-      await db.cols.user.create({
-        _id,
-        email: g.user.email,
-        secret: sArray[0].toString(16),
-        type: "admin",
-        ...g.user
-      });
+  //     await db.cols.user.create({
+  //       _id,
+  //       email: g.user.email,
+  //       secret: sArray[0].toString(16),
+  //       type: "admin",
+  //       ...g.user
+  //     });
 
-      g.user._id = _id;
+  //     g.user._id = _id;
 
-      this.isUserInit = true;
-      location.reload();
-    }
-  }
+  //     this.isUserInit = true;
+  //     location.reload();
+  //   }
+  // }
 }
 </script>
