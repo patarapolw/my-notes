@@ -1,5 +1,5 @@
-import { TimeStamp, IFindOptions, IUser, IPost } from "@my-notes/db";
-import { fetchJSON } from '@/global';
+import { TimeStamp, IFindOptions, IUser, IPost, IMedia } from "@my-notes/db";
+import { fetchJSON } from '@/util';
 
 class Collection<T extends {_id: string, tag?: string[]}> {
   constructor(public name: string) {}
@@ -44,13 +44,27 @@ class Database {
   cols: {
     user: Collection<IUser>;
     post: Collection<IPost>;
+    media: Collection<IMedia>;
   }
 
   constructor() {
     this.cols = {
       user: new Collection("user"),
-      post: new Collection("post")
+      post: new Collection("post"),
+      media: new Collection("media")
     }
+  }
+
+  async uploadMedia(data: File, tag?: string[]) {
+    const formData = new FormData();
+    formData.append("file", data);
+    formData.append("tag", tag ? JSON.stringify(tag) : "");
+    const r = await fetch("/api/media/", {
+      method: "PUT",
+      body: formData
+    }).then((r) => r.json());
+
+    return `/api/media/${r.id}`;
   }
 }
 

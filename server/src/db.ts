@@ -5,10 +5,12 @@ import UrlSafeString from "url-safe-string";
 // @ts-ignore
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
-import { TimeStamp, IFindOptions } from "@my-notes/db";
+import { TimeStamp, IFindOptions, IUser, IPost, IMedia } from "@my-notes/db";
 import { Router, Express } from "express";
 import bodyParser from "body-parser";
 import { CONFIG } from "../../config";
+import fileUpload, { UploadedFile } from "express-fileupload";
+import cors from "cors";
 
 const StoragePouchDB = PouchDB.defaults({prefix: CONFIG.storage});
 
@@ -16,7 +18,7 @@ const uss = new UrlSafeString({
   regexRemovePattern: /((?!([a-z0-9.])).)/gi
 });
 
-class Collection<T extends {_id: string, tags?: string[]}> {
+class Collection<T extends {_id: string, tag?: string[]}> {
   public pouch: PouchDB.Database<TimeStamp<T>>;
 
   constructor(public name: string, public options: {
@@ -190,65 +192,42 @@ class Collection<T extends {_id: string, tags?: string[]}> {
     })
   }
 
-  async addTag(id: string, tags: string[]) {
+  async addTag(id: string, tag: string[]) {
     return await this.pouch.get(id).then((d) => {
-      if (d.tags) {
-        for (const t of d.tags) {
-          if (!tags.includes(t)) {
-            d.tags.push(t);
+      if (d.tag) {
+        for (const t of d.tag) {
+          if (!tag.includes(t)) {
+            d.tag.push(t);
           }
         }
       } else {
-        d.tags = tags;
+        d.tag = tag;
       }
 
       return this.pouch.put(d);
     });
   }
 
-  async removeTag(id: string, tags: string[]) {
+  async removeTag(id: string, tag: string[]) {
     return await this.pouch.get(id).then((d) => {
-      if (d.tags) {
+      if (d.tag) {
         const newTags: string[] = [];
-        for (const t of d.tags) {
-          if (!tags.includes(t)) {
+        for (const t of d.tag) {
+          if (!tag.includes(t)) {
             newTags.push(t);
           }
         }
 
         if (newTags.length > 0) {
-          d.tags = newTags;
+          d.tag = newTags;
         } else {
-          delete d.tags;
+          delete d.tag;
         }
       }
 
       return this.pouch.put(d);
     });
   }
-}
-
-export interface IUser {
-  _id: string;
-  type?: string;
-  email: string;
-  picture?: string;
-  secret: string;
-  info?: {
-    name?: string;
-    website?: string;
-  };
-  tags?: string[];
-}
-
-export interface IPost {
-  _id: string;
-  title: string;
-  date?: string;
-  type?: string;
-  tags?: string[];
-  headers: any;
-  content: string;
 }
 
 export class Database {
@@ -260,6 +239,17 @@ export class Database {
     post: new Collection<IPost>("post", {parseQ: {
       anyOf: ["title", "type", "tag"],
       isString: ["title", "type", "tag"]
+    }}),
+    media: new Collection<IMedia & {
+      _attachments: {
+        [name: string]: {
+          content_type: string;
+          data: Buffer;
+        }
+      }
+    }>("media", {parseQ: {
+      anyOf: ["name", "tag"],
+      isString: ["name", "tag"]
     }})
   }
 
@@ -268,9 +258,59 @@ export class Database {
   async init() {
     const router = Router();
     router.use(bodyParser.json());
+    router.use(cors({
+      origin: /\/\/localhost/
+    }));
 
     await Promise.all(Object.values(this.cols).map((el) => el.init(this.app)));
 
+    const mediaRouter = Router();
+    mediaRouter.use(fileUpload());
+    mediaRouter.get("/:id", async (req, res, next) => {
+      try {
+        const p = await this.cols.media.pouch.get(req.params.id, {attachments: true, binary: true});
+        const a = Object.values(p._attachments)[0];
+        return res.send(p ? a.data : "");
+      } catch(e) {
+        return next(e);
+      }
+    });
+    mediaRouter.put("/", async (req, res, next) => {
+      try {
+        const file = req.files!.file as UploadedFile;
+        let {name, data} = file;
+    
+        if (name === "image.png") {
+          name = new Date().toISOString();
+        }
+    
+        const { tag } = req.body;
+        let realTag: string[] | undefined = undefined;
+        if (tag) {
+          realTag = JSON.parse(tag);
+        }
+    
+        const p = await this.cols.media.create({
+          _id: (await this.cols.media.getSafeId(name)).id,
+          name,
+          tag: realTag,
+          _attachments: {
+            [name]: {
+              content_type: req.headers["content-type"] || "image/png",
+              data
+            }
+          }
+        });
+        
+        return res.json({
+          id: p.id
+        });
+      } catch(e) {
+        return next(e);
+      }
+    });
+
     this.app.use("/api", router);
+    this.app.use("/api/media", mediaRouter);
   }
 }

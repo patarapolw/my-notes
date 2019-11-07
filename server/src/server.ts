@@ -8,4 +8,4 @@ const db = new Database(app);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`)
-})
+});

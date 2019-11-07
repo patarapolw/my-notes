@@ -23,7 +23,7 @@ export interface IUser {
     name?: string;
     website?: string;
   };
-  tags?: string[];
+  tag?: string[];
 }
 
 export interface IPost {
@@ -31,7 +31,13 @@ export interface IPost {
   title: string;
   date?: string;
   type?: string;
-  tags?: string[];
+  tag?: string[];
   headers: any;
   content: string;
+}
+
+export interface IMedia {
+  _id: string;
+  name: string;
+  tag?: string[];
 }
