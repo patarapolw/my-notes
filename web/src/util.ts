@@ -1,3 +1,10 @@
+let electron: typeof import("electron") | null = null;
+try {
+  electron = require("electron");
+} catch(e) {
+  console.error(e);
+}
+
 export const fetchJSON = async (url: string, data?: Record<string, any> | null, method: string = "POST") => {
   let r: Response;
   if (method !== "GET") {
@@ -68,4 +75,21 @@ export function setTitle(s?: string) {
 
 export function clone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
+}
+
+export function openInNewWindow(url: string) {
+  if (/\/\/localhost/.test(url)) {
+    if (electron) {
+      location.href = url;
+      return;
+    }
+  } else {
+    if (electron) {
+      const { shell } = electron;
+      shell.openExternal(url);
+      return;
+    }
+  }
+
+  open(url, "_blank");
 }

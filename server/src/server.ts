@@ -6,6 +6,9 @@ const app = express();
 const port = process.env.PORT || 24000;
 const db = new Database();
 
+const isAsar = process.mainModule ? process.mainModule.filename.includes('app.asar') : false;
+let isServerRunning = false;
+
 (async () => {
   await db.init(app);
 
@@ -13,9 +16,21 @@ const db = new Database();
     rewrites: [{ from: /^\/reveal/, to: '/reveal.html' }]
   }));
   
-  app.use(express.static(`../web/dist`));
+  app.use(express.static(isAsar ? `public` : `../electron/public`));
 
   app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`)
+    console.log(`Server running at http://localhost:${port}`);
+    isServerRunning = true;
+    if (process.send) {
+      process.send("isServerRunning");
+    }
   });
 })().catch(console.error);
+
+process.on("message", (data) => {
+  if (data === "isServerRunning" && isServerRunning) {
+    if (process.send) {
+      process.send("isServerRunning");
+    }
+  }
+});

@@ -6,7 +6,6 @@ v-container.h-100.d-flex.flex-column.pa-0
       v-spacer
       v-toolbar-items
         v-btn(text @click="onTogglePreviewClicked") {{hasPreview ? "Hide Preview" : "Show Preview"}}
-        v-btn(text :disabled="!fileUrl" @click="openInExternal") Open in external
         v-btn(text @click="reset") New
         v-btn(text @click="load") Reload
         v-btn(text :disabled="!canSave" @click="save") Save
@@ -201,12 +200,6 @@ export default class PostEdit extends Vue {
     }
 
     return this.$router.resolve(`/post?id=${id}`).href;
-  }
-
-  openInExternal() {
-    if (this.fileUrl) {
-      open(this.fileUrl, "_blank");
-    }
   }
 
   @Watch("$route", {deep: true})

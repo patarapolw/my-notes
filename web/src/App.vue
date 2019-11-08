@@ -27,7 +27,7 @@ v-app
           v-icon mdi-play-box-outline
         v-list-item-content
           v-list-item-title Presentations
-      v-list-item(href="https://github.com/patarapolw/my-notes" target="_blank")
+      v-list-item(@click="openInNewWindow('https://github.com/patarapolw/my-notes')")
         v-list-item-avatar
           v-icon mdi-github-circle
         v-list-item-content
@@ -64,12 +64,15 @@ import { Vue, Component, Watch } from "vue-property-decorator";
 import { g } from "./global";
 import dotProp from "dot-prop";
 import db from "./db";
+import { openInNewWindow } from "./util";
 
 @Component
 export default class App extends Vue {
   private isDrawer: boolean = this.$vuetify.breakpoint.lgAndUp;
   private g = g;
   // private isUserInit: boolean | null = null;
+
+  openInNewWindow = openInNewWindow;
 
   async mounted() {
     Array.from(document.getElementsByTagName("input")).forEach((input) => {

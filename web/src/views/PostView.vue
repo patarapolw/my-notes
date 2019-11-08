@@ -3,7 +3,7 @@ v-container.d-flex.flex-column.pa-0
   div(style="position: fixed; z-index: 100; width: calc(100% - 256px); padding: 10px")
     v-toolbar.elevation-1
       v-spacer
-      v-btn(text to="/post/edit" target="_blank") New
+      v-btn(text @click="openInNewWindow($router.resolve('/post/edit').href)") New
       v-btn(text @click="load") Reload
       v-toolbar-items
         v-menu(offset-y)
@@ -40,7 +40,7 @@ v-container.d-flex.flex-column.pa-0
 <script lang="ts">
 import { Vue, Component, Watch } from "vue-property-decorator";
 import matter from "gray-matter";
-import { setTitle } from '../util';
+import { setTitle, openInNewWindow } from '../util';
 import Raw from "../components/Raw.vue";
 import { g } from "../global";
 import db from "../db";
@@ -61,6 +61,8 @@ export default class BlogView extends Vue {
   private items: any[] = [];
   private expanded: any[] = [];
   private options: any = {};
+
+  openInNewWindow = openInNewWindow;
 
   private snackbar = {
     text: "",
@@ -171,7 +173,7 @@ export default class BlogView extends Vue {
 
   clickRow(data: any) {
     const url = this.$router.resolve({path: "/post/edit", query: {id: data._id}});
-    open(url.href, "_blank");
+    openInNewWindow(url.href);
   }
 }
 </script>

@@ -3,7 +3,7 @@ v-container.d-flex.flex-column.pa-0
   div(style="position: fixed; z-index: 100; width: calc(100% - 256px); padding: 10px")
     v-toolbar.elevation-1
       v-spacer
-      v-btn(text to="/post/edit" target="_blank") New
+      v-btn(text) New
       v-btn(text @click="load") Reload
       v-toolbar-items
         v-menu(offset-y)
@@ -38,7 +38,7 @@ v-container.d-flex.flex-column.pa-0
 
 <script lang="ts">
 import { Vue, Component, Watch } from "vue-property-decorator";
-import { setTitle } from '../util';
+import { setTitle, openInNewWindow } from '../util';
 import { g } from "../global";
 import db from "../db";
 
