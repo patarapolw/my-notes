@@ -1,0 +1,68 @@
+{
+  "name": "my-notes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "electron dist_electron/bundled/background.js",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps"
+  },
+  "main": "background.js",
+  "dependencies": {
+    "@patarapolw/reveal-md": "^0.1.4",
+    "@types/codemirror": "0.0.80",
+    "@types/hyperscript": "0.0.3",
+    "@types/showdown": "^1.9.3",
+    "codemirror": "^5.49.2",
+    "core-js": "^3.3.2",
+    "dot-prop": "^5.2.0",
+    "gray-matter": "^4.0.2",
+    "hyperpug": "^0.2.1",
+    "hyperscript": "^2.0.2",
+    "indented-filter": "^0.1.1",
+    "moment": "^2.24.0",
+    "record-to-nested": "^1.0.0",
+    "showdown": "^1.9.1",
+    "valid-moment": "^1.0.0",
+    "vue": "^2.6.10",
+    "vue-class-component": "^7.0.2",
+    "vue-codemirror": "^4.0.6",
+    "vue-property-decorator": "^8.3.0",
+    "vue-router": "^3.1.3",
+    "vuetify": "^2.1.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.0.0",
+    "@vue/cli-plugin-router": "^4.0.0",
+    "@vue/cli-plugin-typescript": "^4.0.0",
+    "@vue/cli-service": "^4.0.0",
+    "electron": "^6.0.0",
+    "sass": "^1.19.0",
+    "sass-loader": "^8.0.0",
+    "typescript": "~3.5.3",
+    "vue-cli-plugin-electron-builder": "^1.4.0",
+    "vue-cli-plugin-vuetify": "^2.0.2",
+    "vue-template-compiler": "^2.6.10",
+    "vuetify-loader": "^1.3.0"
+  },
+  "optionalDependencies": {
+    "@patarapolw/my-notes__db": "file:../lib/_local/db"
+  },
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ],
+  "description": "Note taking app with custom Markdown and Reveal.js",
+  "author": {
+    "name": "Pacharapol Withayasakpunt",
+    "email": "patarapolw@gmail.com",
+    "url": "https://polvcode.dev"
+  }
+}
