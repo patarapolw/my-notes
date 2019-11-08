@@ -14,10 +14,10 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "downlevelIteration": true,
-    "allowJs": true
+    "allowJs": true,
+    "rootDir": "src"
   },
   "include": [
-    "src/**/*",
-    "scripts/**/*"
+    "src/**/*"
   ]
 }

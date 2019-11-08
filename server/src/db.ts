@@ -7,15 +7,20 @@ import uuid4 from "uuid/v4";
 import { TimeStamp, IFindOptions, IPost, IMedia } from "@patarapolw/my-notes__db";
 import { Router, Express } from "express";
 import bodyParser from "body-parser";
-import { CONFIG } from "../../config";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import cors from "cors";
-import replicationStream from "pouchdb-replication-stream";
+import { AppDirs } from "appdirs";
+import path from "path";
+import mkdirp from "mkdirp";
 
-PouchDB.plugin(replicationStream.plugin);
-PouchDB.adapter("writableStream", replicationStream.adapters.writableStream);
+const appdirs = new AppDirs("my-notes");
+const DATA_PATH = path.join(appdirs.userDataDir(), "data");
 
-const StoragePouchDB = PouchDB.defaults({prefix: CONFIG.storage});
+console.log(`DATA_PATH is at ${DATA_PATH}`);
+
+mkdirp.sync(DATA_PATH);
+
+const StoragePouchDB = PouchDB.defaults({prefix: DATA_PATH + "/"});
 
 const uss = new UrlSafeString({
   regexRemovePattern: /((?!([a-z0-9.])).)/gi
@@ -30,18 +35,7 @@ class Collection<T extends {_id: string, tag?: string[]}> {
     this.pouch = new StoragePouchDB<TimeStamp<T>>(name);
   }
 
-  get couchUrl() {
-    return `${CONFIG.couch}/${this.name}`;
-  }
-
   async init(app?: Router) {
-    if (CONFIG.couch) {
-      const r = await this.pouch.replicate.from(this.couchUrl);
-      this.pouch.replicate.to(this.couchUrl, {live: true});
-
-      return r.ok;
-    }
-
     if (app) {
       const router = Router();
       router.post("/", async (req, res, next) => {
