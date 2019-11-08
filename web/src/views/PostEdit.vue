@@ -134,12 +134,12 @@ export default class PostEdit extends Vue {
         fn();
       });
     };
-    if (this.iframe && this.iframe.contentDocument) {
-      if (this.iframeWindow.revealMd) {
-        toLoad();
-      } else {
-        this.iframeWindow.onload = toLoad;
-      }
+    if (this.iframeWindow.revealMd) {
+      toLoad();
+    } else {
+      setTimeout(() => {
+        this.onIFrameReady(fn);
+      }, 1000);
     }
   }
 
@@ -230,6 +230,7 @@ export default class PostEdit extends Vue {
         const {title, date, tag, type, content} = (await db.cols.post.get(id as string)) || {} as any;
 
         const m = matter(content);
+        this.headers = m.data;
         this.code = matter.stringify(m.content, clone({...m.data, title, date, tag, type}));
         this.isEdited = false;
 
@@ -262,7 +263,9 @@ export default class PostEdit extends Vue {
         }
       }
 
-      this.iframeWindow.Reveal.slide(slideNumber, stepNumber);
+      if (this.iframeWindow.Reveal) {
+        this.iframeWindow.Reveal.slide(slideNumber, stepNumber);
+      }
     }
   }
 
