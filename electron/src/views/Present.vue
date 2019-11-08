@@ -5,7 +5,7 @@ v-container.pa-0(style="height: 100%")
       v-treeview(@update:active="onSelected" :open="open" :items="items" item-key="data._id" open-on-click activatable return-object)
     v-divider(vertical)
     v-col
-      iframe#iframe(ref="iframe" v-if="id" :src="'/reveal?id=' + id" frameborder="0" 
+      iframe#iframe(ref="iframe" v-if="id" :src="fileUrl" frameborder="0" 
       :style="{width: $vuetify.breakpoint.lgAndUp ? 'calc(70vw - 256px)' : '100%'}")
 </template>
 
@@ -47,6 +47,10 @@ export default class Reveal extends Vue {
     } else {
       this.$router.push({query: {}});
     }
+  }
+
+  get fileUrl() {
+    return this.$router.resolve(`/reveal?id=${this.id}`).href;
   }
 
   async onSelected(v: ITreeViewItem[]) {

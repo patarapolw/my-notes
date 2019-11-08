@@ -5,7 +5,21 @@ import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib'
+import { fork } from "child_process";
+import path from "path";
+
+process.env.PORT = process.env.PORT || "24000";
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
+const serverProcess = fork(isDevelopment 
+  ? path.resolve(__dirname, "../public/server.js")
+  : path.resolve(__dirname, "server.js"))
+
+try {
+  serverProcess.stdout!.on("data", console.log)
+  serverProcess.stderr!.on("data", console.error)
+} catch(e) {}
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -16,22 +30,29 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
-    nodeIntegration: true
-  } })
-
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    if (!process.env.IS_TEST) win.webContents.openDevTools()
-  } else {
-    createProtocol('app')
-    // Load the index.html when not in development
-    win.loadURL('app://./index.html')
-  }
-
-  win.on('closed', () => {
-    win = null
+  serverProcess.send("isServerRunning")
+  serverProcess.once("message", (data) => {
+    if (data === "isServerRunning") {
+      win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
+        nodeIntegration: true
+      } })
+    
+      win.maximize()
+    
+      if (process.env.WEBPACK_DEV_SERVER_URL) {
+        // Load the url of the dev server if in development mode
+        win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+        if (!process.env.IS_TEST) win.webContents.openDevTools()
+      } else {
+        createProtocol('app')
+        // Load the index.html when not in development
+        win.loadURL('app://./index.html')
+      }
+    
+      win.on('closed', () => {
+        win = null
+      })
+    }
   })
 }
 
@@ -39,9 +60,9 @@ function createWindow () {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
+  // if (process.platform !== 'darwin') {
     app.quit()
-  }
+  // }
 })
 
 app.on('activate', () => {
@@ -87,3 +108,24 @@ if (isDevelopment) {
     })
   }
 }
+
+// Ungraceful exit handler
+function exitHandler() {
+  console.log("Killing the server process");
+  serverProcess.kill();
+}
+
+//do something when app is closing
+process.on('exit', exitHandler);
+
+//catches ctrl+c event
+process.on('SIGINT', exitHandler);
+
+//catches uncaught exceptions
+process.on('uncaughtException', exitHandler);
+
+process.on('message', data => {
+  if (process.platform === "win32" && data === 'graceful-exit') {
+    exitHandler();
+  }
+})

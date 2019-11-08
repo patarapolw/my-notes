@@ -34,7 +34,7 @@ export function speak(s: string, lang: string = "zh-CN", rate: number = 0.8) {
 }
 
 export function setTitle(s?: string) {
-  document.getElementsByTagName("title")[0].innerText = s || "";
+  document.getElementsByTagName("title")[0].innerText = s ? `My Notes - ${s}` : "My Notes";
 }
 
 export function clone<T>(obj: T): T {

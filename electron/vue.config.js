@@ -3,8 +3,11 @@ module.exports = {
     "vuetify"
   ],
   runtimeCompiler: true,
-  pages: {
-    index: "src/main.ts",
-    reveal: "src/reveal.ts"
-  }
+  configureWebpack: {
+    externals: [
+      "express", "cors", "pouchdb", "appdirs", "esm",
+      "q2filter", "url-safe-string", "chinese-to-pinyin", "uuid", "express-fileupload"
+    ]
+  },
+  publicPath: ""
 }

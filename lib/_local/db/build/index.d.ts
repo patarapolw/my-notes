@@ -1,3 +1,5 @@
+export declare const PORT: string;
+export declare const ORIGIN: string;
 export interface IFindOptions {
     offset: number;
     limit: number | null;

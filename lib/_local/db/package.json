@@ -10,5 +10,8 @@
   },
   "keywords": [],
   "author": "Pacharapol Withayasakpunt <patarapolw@gmail.com> (https://polvcode.dev)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^12.12.6"
+  }
 }

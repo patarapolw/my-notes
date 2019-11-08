@@ -6,7 +6,6 @@ v-container.h-100.d-flex.flex-column.pa-0
       v-spacer
       v-toolbar-items
         v-btn(text @click="onTogglePreviewClicked") {{hasPreview ? "Hide Preview" : "Show Preview"}}
-        v-btn(text :disabled="!fileUrl" @click="openInExternal") Open in external
         v-btn(text @click="reset") New
         v-btn(text @click="load") Reload
         v-btn(text :disabled="!canSave" @click="save") Save
@@ -16,7 +15,7 @@ v-container.h-100.d-flex.flex-column.pa-0
     v-col(v-show="hasPreview" ref="previewHolder" style="width: 50%")
       v-card.h-100.pa-3(v-if="!isReveal")
         raw(:code="html" @lang="onLangChanged")
-      iframe#iframe(ref="iframe" v-show="isReveal" :src="fileUrl || '/reveal'" frameborder="0")
+      iframe#iframe(ref="iframe" v-show="isReveal" :src="fileUrl" frameborder="0")
   v-snackbar(v-model="snackbar.show" :color="snackbar.color" :top="true")
     | {{snackbar.text}}
     v-btn(text @click="snackbar.show = false") Close
@@ -33,6 +32,9 @@ import CodeMirror from "codemirror";
 import RevealMd from "@patarapolw/reveal-md";
 import { RevealStatic } from "reveal.js";
 import db from "../db";
+import { remote } from "electron";
+
+const eWindow = remote.getCurrentWindow();
 
 @Component({
   components: {
@@ -99,18 +101,39 @@ export default class PostEdit extends Vue {
     await this.load();
     this.onTitleChanged();
 
-    window.onbeforeunload = (e: any) => {
-      console.log(e);
-      const msg = this.canSave ? "Please save before leaving." : null;
-      if (msg) {
-        e.returnValue = msg;
-        return msg;
+    window.onbeforeunload = () => {
+      if (this.canSave) {
+        remote.dialog.showMessageBox(eWindow, {
+          message: "Are you sure you want to leave? Please save before leaving.",
+          buttons: ["OK","Cancel"]
+        }).then((r) => {
+          if(r.response === 0) {
+            eWindow.destroy();
+          }
+        });
+
+        return false;
       }
     }
   }
 
   async destroyed() {
-    window.onbeforeunload = null;
+    eWindow.removeAllListeners();
+  }
+
+  beforeRouteLeave(to: any, from: any, next: any) {
+    if (this.canSave) {
+      remote.dialog.showMessageBox(eWindow, {
+        message: "Are you sure you want to leave? Please save before leaving.",
+        buttons: ["OK","Cancel"]
+      }).then((r) => {
+        if(r.response === 0) {
+          next();
+        }
+      });
+
+      next(false);
+    }
   }
 
   get codemirror(): CodeMirror.Editor {
@@ -167,6 +190,7 @@ export default class PostEdit extends Vue {
     this.html = "";
     this.cmOptions.mode.base = "markdown";
     this.isEdited = false;
+    this.currentId = null;
 
     this.hasPreview = false;
 
@@ -192,21 +216,12 @@ export default class PostEdit extends Vue {
 
   get fileUrl() {
     const {id} = this.$route.query;
-    if (!id) {
-      return null;
+
+    if (this.isReveal && id) {
+      return new URL(`reveal.html?id=${id}`, location.origin);
     }
 
-    if (this.isReveal) {
-      return this.$router.resolve(`/reveal?id=${id}`).href;
-    }
-
-    return this.$router.resolve(`/post?id=${id}`).href;
-  }
-
-  openInExternal() {
-    if (this.fileUrl) {
-      open(this.fileUrl, "_blank");
-    }
+    return new URL(`reveal.html`, location.origin);
   }
 
   @Watch("$route", {deep: true})
@@ -224,7 +239,6 @@ export default class PostEdit extends Vue {
 
     if (id && id !== this.currentId) {
       this.currentId = id as string;
-      const url = `/api/post/${id}`;
 
       try {
         const {title, date, tag, type, content} = (await db.cols.post.get(id as string)) || {} as any;

@@ -3,7 +3,7 @@ v-container.d-flex.flex-column.pa-0
   div(style="position: fixed; z-index: 100; width: calc(100% - 256px); padding: 10px")
     v-toolbar.elevation-1
       v-spacer
-      v-btn(text to="/post/edit" target="_blank") New
+      v-btn(text to="/post/edit") New
       v-btn(text @click="load") Reload
       v-toolbar-items
         v-menu(offset-y)
@@ -170,8 +170,7 @@ export default class BlogView extends Vue {
   }
 
   clickRow(data: any) {
-    const url = this.$router.resolve({path: "/post/edit", query: {id: data._id}});
-    open(url.href, "_blank");
+    this.$router.push({path: "/post/edit", query: {id: data._id}});
   }
 }
 </script>

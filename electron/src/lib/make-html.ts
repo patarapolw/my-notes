@@ -2,6 +2,7 @@ import { createIndentedFilter } from "indented-filter";
 import h from "hyperscript";
 import showdown from "showdown";
 import pug from "hyperpug";
+import { PORT } from '@patarapolw/my-notes__db';
 
 export const simpleTableExt = {
   type: "lang",
@@ -71,13 +72,19 @@ export const speakExt = {
   })
 }
 
+export const apiExtension = {
+  type: "lang",
+  regex: /(\(| )\/api\//g,
+  replace: `$1http://localhost:${PORT}/api/`
+}
+
 export default class MakeHTML {
   mdConverter: showdown.Converter;
   pugConverter: (s: string) => string;
 
   constructor() {
     this.mdConverter = new showdown.Converter({
-      extensions: [simpleTableExt, toExt, slideExt, speakExt]
+      extensions: [simpleTableExt, toExt, slideExt, speakExt, apiExtension]
     });
     this.mdConverter.setFlavor("github");
 

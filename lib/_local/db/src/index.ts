@@ -1,3 +1,6 @@
+export const PORT = (typeof process !== "undefined" ? process.env.PORT : null) || "24000";
+export const ORIGIN = `http://localhost:${PORT}`;
+
 export interface IFindOptions {
   offset: number;
   limit: number | null;
@@ -112,7 +115,7 @@ export default class Database {
 const fetchJSON = async (url: string, data?: Record<string, any> | null, method: string = "POST") => {
   let r: Response;
   if (method !== "GET") {
-    r = await fetch(url, {
+    r = await fetch(new URL(url, ORIGIN).href, {
       method,
       headers: {
         "Content-Type": "application/json"
@@ -120,7 +123,7 @@ const fetchJSON = async (url: string, data?: Record<string, any> | null, method:
       body: data ? JSON.stringify(data) : undefined
     });
   } else {
-    const newUrl = new URL(url, location.origin);
+    const newUrl = new URL(url, ORIGIN);
     if (data) {
       for (const [k, v] of Object.entries<string>(data)) {
         if (v) {
