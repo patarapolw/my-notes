@@ -1,9 +1,12 @@
-let electron: typeof import("electron") | null = null;
-try {
-  electron = require("electron");
-} catch(e) {
-  console.error(e);
+import router from './router';
+
+declare global {
+  interface Window {
+    require: NodeRequire;
+  }
 }
+
+const electron: typeof import("electron") | null = window.require ? window.require("electron") : null;
 
 export const fetchJSON = async (url: string, data?: Record<string, any> | null, method: string = "POST") => {
   let r: Response;
@@ -78,6 +81,13 @@ export function clone<T>(obj: T): T {
 }
 
 export function openInNewWindow(url: string) {
+  if (url.startsWith("#")) {
+    if (electron) {
+      router.push(url.slice(1));
+      return;
+    }
+  }
+
   if (/\/\/localhost/.test(url)) {
     if (electron) {
       location.href = url;

@@ -22,11 +22,13 @@ function createWindow () {
   serverProcess.send("isServerRunning")
   serverProcess.once("message", (data) => {
     if (data === "isServerRunning") {
-      win = new BrowserWindow({ width: 1024, height: 768 })
+      win = new BrowserWindow({ width: 1024, height: 768, webPreferences: {
+        nodeIntegration: true
+      } })
     
       win.maximize()
     
-      win.loadURL(`http://localhost:${process.env.PORT}`)
+      win.loadFile("public/index.html")
 
       if (!isAsar) {
         win.webContents.openDevTools()

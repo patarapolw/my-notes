@@ -15,7 +15,7 @@ v-container.h-100.d-flex.flex-column.pa-0
     v-col(v-show="hasPreview" ref="previewHolder" style="width: 50%")
       v-card.h-100.pa-3(v-if="!isReveal")
         raw(:code="html" @lang="onLangChanged")
-      iframe#iframe(ref="iframe" v-show="isReveal" :src="fileUrl || '/reveal'" frameborder="0")
+      iframe#iframe(ref="iframe" v-show="isReveal" :src="fileUrl" frameborder="0")
   v-snackbar(v-model="snackbar.show" :color="snackbar.color" :top="true")
     | {{snackbar.text}}
     v-btn(text @click="snackbar.show = false") Close
@@ -191,15 +191,7 @@ export default class PostEdit extends Vue {
 
   get fileUrl() {
     const {id} = this.$route.query;
-    if (!id) {
-      return null;
-    }
-
-    if (this.isReveal) {
-      return this.$router.resolve(`/reveal?id=${id}`).href;
-    }
-
-    return this.$router.resolve(`/post?id=${id}`).href;
+    return id ? `reveal.html?id=${id}` : "reveal.html";
   }
 
   @Watch("$route", {deep: true})

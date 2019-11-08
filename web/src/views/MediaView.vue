@@ -21,7 +21,7 @@ v-container.d-flex.flex-column.pa-0
       :expanded.sync="expanded" :options.sync="options" :server-items-length="count")
       template(v-slot:expanded-item="{headers}")
         td(v-if="expanded[0]" :colspan="headers.length")
-          img(:src="'/api/media/' + expanded[0]._id" style="max-height: 300px; overflow: scroll")
+          img(:src="'http://localhost:24000/api/media/' + expanded[0]._id" style="max-height: 300px; overflow: scroll")
   v-snackbar(v-model="snackbar.show" :color="snackbar.color" :top="true")
     | {{snackbar.text}}
     v-btn(text @click="snackbar.show = false") Close

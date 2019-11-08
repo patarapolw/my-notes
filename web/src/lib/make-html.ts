@@ -71,13 +71,19 @@ export const speakExt = {
   })
 }
 
+export const apiExt = {
+  type: "lang",
+  regex: /(\(| )\/api\//g,
+  replace: "$1http://localhost:24000/api/"
+}
+
 export default class MakeHTML {
   mdConverter: showdown.Converter;
   pugConverter: (s: string) => string;
 
   constructor() {
     this.mdConverter = new showdown.Converter({
-      extensions: [simpleTableExt, toExt, slideExt, speakExt]
+      extensions: [simpleTableExt, toExt, slideExt, speakExt, apiExt]
     });
     this.mdConverter.setFlavor("github");
 

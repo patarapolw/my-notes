@@ -15,6 +15,7 @@ module.exports = {
       }
     }
   },
+  publicPath: "",
   configureWebpack: {
     externals: ["electron"]
   }
