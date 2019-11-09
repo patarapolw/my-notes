@@ -1,3 +1,9 @@
+const dotenv = require("dotenv-extended");
+const env = dotenv.load({
+  path: "../.env",
+  assignToProcessEnv: false
+});
+
 module.exports = {
   "transpileDependencies": [
     "vuetify"
@@ -11,7 +17,7 @@ module.exports = {
   devServer: {
     proxy: {
       "^/api": {
-        target: "http://localhost:24000"
+        target: `http://localhost:${env.PORT || 24000}`
       }
     }
   },

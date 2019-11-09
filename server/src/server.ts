@@ -1,6 +1,7 @@
 import express from "express";
 import { Database } from "./db";
 import history from "connect-history-api-fallback";
+import "./config";
 
 const app = express();
 const port = process.env.PORT || 24000;

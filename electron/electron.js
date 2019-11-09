@@ -25,6 +25,8 @@ function createWindow () {
       win = new BrowserWindow({ width: 1024, height: 768, webPreferences: {
         nodeIntegration: true
       } })
+
+      win.webContents.send("port", process.env.PORT);
     
       win.maximize()
     

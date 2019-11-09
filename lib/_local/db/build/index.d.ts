@@ -1,5 +1,4 @@
-export declare const PORT: string;
-export declare const ORIGIN: string;
+export declare let PORT: string | null | undefined;
 export interface IFindOptions {
     offset: number;
     limit: number | null;

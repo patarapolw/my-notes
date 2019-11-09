@@ -71,10 +71,14 @@ export const speakExt = {
   })
 }
 
+export let PORT = location.port || process.env.PORT || "";
+
 export const apiExt = {
   type: "lang",
   regex: /(\(| )\/api\//g,
-  replace: "$1http://localhost:24000/api/"
+  replace: (p0: string, p1: string) => {
+    return PORT ? `${p1}http://localhost:${PORT}/api/` : p0;
+  }
 }
 
 export default class MakeHTML {

@@ -12,6 +12,7 @@ import cors from "cors";
 import { AppDirs } from "appdirs";
 import path from "path";
 import mkdirp from "mkdirp";
+import "./config";
 
 const appdirs = new AppDirs("my-notes");
 const DATA_PATH = path.join(appdirs.userDataDir(), "data");
@@ -263,6 +264,10 @@ export class Database {
       router.use(cors({
         origin: /\/\/localhost/
       }));
+      router.post("/", (req, res) => {
+        const { PORT } = process.env;
+        return res.json({ PORT });
+      })
     }
 
     await Promise.all(Object.values(this.cols).map((el) => el.init(router)));

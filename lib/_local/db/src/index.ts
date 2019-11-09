@@ -1,5 +1,4 @@
-export const PORT = (typeof process !== "undefined" ? process.env.PORT : null) || "24000";
-export const ORIGIN = `http://localhost:${PORT}`;
+export let PORT = typeof process !== "undefined" ? process.env.PORT : null;
 
 export interface IFindOptions {
   offset: number;
@@ -100,19 +99,21 @@ export default class Database {
   }
 
   async uploadMedia(data: File, tag?: string[]) {
+    const ORIGIN = `http://localhost:${PORT || location.port}`;
     const formData = new FormData();
     formData.append("file", data);
     formData.append("tag", tag ? JSON.stringify(tag) : "");
-    const r = await fetch("/api/media/", {
+    const r = await fetch(`${ORIGIN}/api/media/`, {
       method: "PUT",
       body: formData
     }).then((r) => r.json());
 
-    return `/api/media/${r.id}`;
+    return `${ORIGIN}/api/media/${r.id}`;
   }
 }
 
 const fetchJSON = async (url: string, data?: Record<string, any> | null, method: string = "POST") => {
+  const ORIGIN = `http://localhost:${PORT || location.port}`;
   let r: Response;
   if (method !== "GET") {
     r = await fetch(new URL(url, ORIGIN).href, {
