@@ -2,6 +2,8 @@ Next generation [reveal-app](https://github.com/patarapolw/reveal-app) that also
 
 ## Configuration
 
+A discardable config is in `.env` which contains configuration such as `PORT`, `DEV_SERVER_PORT` and `DATA_PATH`, which all have default values. This can be safely edited / deleted, and will not be contained in Electron app.
+
 Another part of configuration is in `.env.local` (which is not synced to GitHub). Create `.env.local` alongside `.env` to enable syncing.
 
 ```

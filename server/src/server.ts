@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { Database } from "./db";
+import { Database, StoragePouchDB } from "./db";
 import history from "connect-history-api-fallback";
 import "./config";
 import "./auth";
@@ -8,25 +8,34 @@ import passport from "passport";
 import authRouter from "./routes/auth";
 import bodyParser from "body-parser";
 import cors from "cors";
+import { PORT, SECRET, CONFIG } from "./config";
+import { generateSecret } from "./util";
+import PouchSession from "session-pouchdb-store";
 
 const app = express();
-const port = process.env.PORT || 24000;
 const db = new Database();
 
 const isAsar = process.mainModule ? process.mainModule.filename.includes('app.asar') : false;
 let isServerRunning = false;
 
-app.use(session({
-  secret: process.env.SECRET!,
-  cookie: {},
-  resave: false,
-  saveUninitialized: true
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
 (async () => {
+  let secret = SECRET;
+  if (!secret) {
+    secret = await generateSecret();
+    CONFIG.set("SECRET", secret);
+  }
+
+  app.use(session({
+    secret,
+    cookie: {},
+    resave: false,
+    saveUninitialized: true,
+    store: new PouchSession(new StoragePouchDB("session"))
+  }));
+  
+  app.use(passport.initialize());
+  app.use(passport.session());
+
   const apiRouter = Router();
 
   apiRouter.use(bodyParser.json());
@@ -49,8 +58,8 @@ app.use(passport.session());
   
   app.use(express.static(isAsar ? `public` : `../electron/public`));
 
-  app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
     isServerRunning = true;
     if (process.send) {
       process.send("isServerRunning");

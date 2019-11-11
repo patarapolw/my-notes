@@ -7,18 +7,9 @@ import uuid4 from "uuid/v4";
 import { TimeStamp, IFindOptions, IPost, IMedia } from "@patarapolw/my-notes__db";
 import { Router } from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
-import { AppDirs } from "appdirs";
-import path from "path";
-import mkdirp from "mkdirp";
-import "./config";
+import { DATA_PATH } from "./config";
 
-const DATA_PATH = process.env.DATA_PATH || path.join(new AppDirs("my-notes").userDataDir(), "data");
-
-console.log(`DATA_PATH is at ${DATA_PATH}`);
-
-mkdirp.sync(DATA_PATH);
-
-const StoragePouchDB = PouchDB.defaults({prefix: DATA_PATH + "/"});
+export const StoragePouchDB = PouchDB.defaults({prefix: DATA_PATH + "/"});
 
 const uss = new UrlSafeString({
   regexRemovePattern: /((?!([a-z0-9.])).)/gi
