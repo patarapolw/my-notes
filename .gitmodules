@@ -1,3 +1,6 @@
 [submodule "lib/q2filter"]
 	path = lib/q2filter
 	url = https://github.com/patarapolw/q2filter.git
+[submodule "lib/liteorm"]
+	path = lib/liteorm
+	url = https://github.com/patarapolw/liteorm

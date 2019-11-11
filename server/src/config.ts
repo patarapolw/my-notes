@@ -1,5 +1,5 @@
-import dotenv from "dotenv";
+import dotenv from "dotenv-flow";
 dotenv.config({
-  path: "../.env"
+  path: ".."
 })
 dotenv.config();

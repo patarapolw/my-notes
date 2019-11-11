@@ -5,17 +5,14 @@ import UrlSafeString from "url-safe-string";
 import pinyin from "chinese-to-pinyin";
 import uuid4 from "uuid/v4";
 import { TimeStamp, IFindOptions, IPost, IMedia } from "@patarapolw/my-notes__db";
-import { Router, Express } from "express";
-import bodyParser from "body-parser";
+import { Router } from "express";
 import fileUpload, { UploadedFile } from "express-fileupload";
-import cors from "cors";
 import { AppDirs } from "appdirs";
 import path from "path";
 import mkdirp from "mkdirp";
 import "./config";
 
-const appdirs = new AppDirs("my-notes");
-const DATA_PATH = path.join(appdirs.userDataDir(), "data");
+const DATA_PATH = process.env.DATA_PATH || path.join(new AppDirs("my-notes").userDataDir(), "data");
 
 console.log(`DATA_PATH is at ${DATA_PATH}`);
 
@@ -255,24 +252,10 @@ export class Database {
     return Object.values(this.cols).map((el) => el.pouch);
   }
 
-  async init(app?: Express) {
-    let router: Router | undefined = undefined;
-
-    if (app) {
-      router = Router();
-      router.use(bodyParser.json());
-      router.use(cors({
-        origin: /\/\/localhost/
-      }));
-      router.post("/", (req, res) => {
-        const { PORT } = process.env;
-        return res.json({ PORT });
-      })
-    }
-
+  async init(router?: Router) {
     await Promise.all(Object.values(this.cols).map((el) => el.init(router)));
 
-    if (app && router) {
+    if (router) {
       const mediaRouter = Router();
       mediaRouter.use(fileUpload());
       mediaRouter.get("/:id", async (req, res, next) => {
@@ -319,8 +302,9 @@ export class Database {
         }
       });
 
-      app.use("/api/media", mediaRouter);
-      app.use("/api", router);
+      router.use("/media", mediaRouter);
     }
+
+    return router;
   }
 }

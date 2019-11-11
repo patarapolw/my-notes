@@ -19,7 +19,7 @@ export const fetchJSON = async (url: string, data?: Record<string, any> | null, 
       body: data ? JSON.stringify(data) : undefined
     });
   } else {
-    const newUrl = new URL(url);
+    const newUrl = new URL(url, location.origin);
     if (data) {
       for (const [k, v] of Object.entries<string>(data)) {
         if (v) {

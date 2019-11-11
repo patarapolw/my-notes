@@ -19,7 +19,8 @@ module.exports = {
       "^/api": {
         target: `http://localhost:${env.PORT || 24000}`
       }
-    }
+    },
+    port: env.DEV_SERVER_PORT || 8000
   },
   publicPath: "",
   configureWebpack: {

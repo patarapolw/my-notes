@@ -15,7 +15,11 @@
     "resolveJsonModule": true,
     "downlevelIteration": true,
     "allowJs": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": [
+      "express-session",
+      "passport"
+    ]
   },
   "include": [
     "src/**/*"

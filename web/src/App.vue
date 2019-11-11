@@ -14,7 +14,7 @@ v-app
           v-list-item-title Media
       v-list-item(to="/blog")
         v-list-item-avatar
-          v-icon mdi-calendar-edit
+          v-icon mdi-calendar-account
         v-list-item-content
           v-list-item-title Blog
       v-list-item(to="/resource")
@@ -27,15 +27,30 @@ v-app
           v-icon mdi-play-box-outline
         v-list-item-content
           v-list-item-title Presentations
+      v-list-item(to="/settings")
+        v-list-item-avatar
+          v-icon mdi-settings-outline
+        v-list-item-content
+          v-list-item-title Settings
       v-list-item(@click="openInNewWindow('https://github.com/patarapolw/my-notes')")
         v-list-item-avatar
           v-icon mdi-github-circle
         v-list-item-content
           v-list-item-title GitHub
-    //- template(v-if="user" v-slot:append)
-    //-   v-card
-    //-     v-card-title Logged in
-    //-     v-card-text user.email
+    template(v-slot:append)
+      v-list(dense)
+        v-list-item(v-if="!g.user" href="/api/login")
+          v-list-item-avatar
+            v-icon mdi-account-off-outline
+          v-list-item-content
+            v-list-item-title Not logged in
+        v-list-item(v-else @click="logout")
+          v-list-item-avatar
+            img(v-if="g.user.picture" :src="g.user.picture")
+            v-icon(v-else) mdi-account-lock-outline
+          v-list-item-content
+            v-list-item-title Logged in as
+            v-list-item-title {{g.user.email}}
   v-app-bar(:clipped-left="isDrawer" app color="orange" dark)
     v-toolbar-title.mr-3
       v-app-bar-nav-icon.mr-2(@click.stop="isDrawer = !isDrawer")
@@ -46,17 +61,11 @@ v-app
       v-model="g.q" @keydown="onSearchKeydown")
   v-content(fluid fill-height)
     router-view
-  //-   router-view(v-if="isUserInit")
-  //- v-dialog(v-model="isUserInit === false" max-width="800")
-  //-   v-card
-  //-     v-card-title Create new admin user
-  //-     v-card-text
-  //-       v-text-field(label="Name" :value="getUserDeep('info.name')" @input="setUserDeep('info.name', $event)")
-  //-       v-text-field(label="Image" :value="g.user.picture" @input="$set(g.user, 'picture', $event)")
-  //-       v-text-field(label="Email" :value="g.user.email" @input="$set(g.user, 'email', $event)")
-  //-       v-text-field(label="Website" :value="getUserDeep('info.website')" @input="setUserDeep('info.website', $event)")
-  //-     v-card-actions
-  //-       v-btn(@click="onNewUserSaved") Save
+  v-dialog(:value="isSynchronizing" max-width="250" persistent)
+    v-card
+      v-card-title Synchronizing
+      v-card-text.text-center
+        v-progress-circular(indeterminate)
 </template>
 
 <script lang="ts">
@@ -64,13 +73,14 @@ import { Vue, Component, Watch } from "vue-property-decorator";
 import { g } from "./global";
 import dotProp from "dot-prop";
 import db from "./db";
-import { openInNewWindow } from "./util";
+import { openInNewWindow, fetchJSON } from "./util";
 
 @Component
 export default class App extends Vue {
   private isDrawer: boolean = this.$vuetify.breakpoint.lgAndUp;
   private g = g;
-  // private isUserInit: boolean | null = null;
+  
+  isSynchronizing = false;
 
   openInNewWindow = openInNewWindow;
 
@@ -81,18 +91,15 @@ export default class App extends Vue {
       input.autocomplete = "off";
     });
 
-    // g.user = (await db.cols.user.find("", {limit: 1})).data[0] || {};
-    // this.isUserInit = !!g.user._id;
+    const user = await fetchJSON("/api/user", null, "GET");
+    console.log(user);
+    user.email = user.emails[0].value;
+    this.$set(this.g, "user", user);
+
+    if (user) {
+      // this.isSynchronizing = true;
+    }
   }
-
-  // getUserDeep(path: string) {
-  //   return dotProp.get(g.user, path);
-  // }
-
-  // setUserDeep(path: string, value: string) {
-  //   dotProp.set(g.user, path, value);
-  //   this.$set(this.g, "user", g.user);
-  // }
 
   @Watch("$route.path")
   onRouteChanged(to: string) {
@@ -105,27 +112,11 @@ export default class App extends Vue {
     }
   }
 
-  // async onNewUserSaved() {
-  //   if (g.user.email) {
-  //     const sArray = new Uint32Array(1);
-  //     crypto.getRandomValues(sArray);
-
-  //     const _id = await db.cols.user.getSafeId(g.user.email);
-
-  //     await db.cols.user.create({
-  //       _id,
-  //       email: g.user.email,
-  //       secret: sArray[0].toString(16),
-  //       type: "admin",
-  //       ...g.user
-  //     });
-
-  //     g.user._id = _id;
-
-  //     this.isUserInit = true;
-  //     location.reload();
-  //   }
-  // }
+  logout() {
+    if (confirm("Are you sure you want to logout?")) {
+      location.href = "/api/logout";
+    }
+  }
 }
 </script>
 
