@@ -84,21 +84,22 @@ export default class App extends Vue {
 
   openInNewWindow = openInNewWindow;
 
-  async mounted() {
+  async created() {
+    const user = await fetchJSON("/api/user");
+    this.$set(this.g, "user", user);
+    console.log(user)
+
+    if (user) {
+      // this.isSynchronizing = true;
+    }
+  }
+
+  mounted() {
     Array.from(document.getElementsByTagName("input")).forEach((input) => {
       input.spellcheck = false;
       input.autocapitalize = "off";
       input.autocomplete = "off";
     });
-
-    const user = await fetchJSON("/api/user", null, "GET");
-    console.log(user);
-    user.email = user.emails[0].value;
-    this.$set(this.g, "user", user);
-
-    if (user) {
-      // this.isSynchronizing = true;
-    }
   }
 
   @Watch("$route.path")
@@ -112,9 +113,10 @@ export default class App extends Vue {
     }
   }
 
-  logout() {
+  async logout() {
     if (confirm("Are you sure you want to logout?")) {
-      location.href = "/api/logout";
+      await fetchJSON("/api/logout");
+      this.$set(this.g, "user", null);
     }
   }
 }

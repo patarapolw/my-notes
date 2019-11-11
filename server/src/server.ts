@@ -2,9 +2,7 @@ import express, { Router } from "express";
 import { Database, StoragePouchDB } from "./db";
 import history from "connect-history-api-fallback";
 import "./config";
-import "./auth";
 import session from "express-session";
-import passport from "passport";
 import authRouter from "./routes/auth";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -32,9 +30,6 @@ let isServerRunning = false;
     saveUninitialized: true,
     store: new PouchSession(new StoragePouchDB("session"))
   }));
-  
-  app.use(passport.initialize());
-  app.use(passport.session());
 
   const apiRouter = Router();
 

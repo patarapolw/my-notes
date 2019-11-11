@@ -1,52 +1,78 @@
 import { Router } from "express";
-import passport from "passport";
+import { getAuth0, PORT } from "../config";
+import { URL } from "url";
+import request from "request";
+import jwt from "jsonwebtoken";
 
 const authRouter = Router();
 
-// Perform the login, after login Auth0 will redirect to callback
 authRouter.get('/login', (req, res, next) => {
   if (req.session) {
     req.session.returnTo = req.headers.referer;
   }
-
   next();
-}, passport.authenticate('auth0', {
-  scope: 'openid email profile'
-}), function (req, res) {
-  res.redirect('/');
-});
+}, (req, res) => {
+  const auth0 = getAuth0();
+  if (auth0) {
+    const url = new URL(`https://${auth0.domain}/authorize`);
+    const sp = url.searchParams;
+    sp.set("response_type", "code");
+    sp.set("client_id", auth0.id);
+    sp.set("redirect_uri", `http://localhost:${PORT}/api/callback`);
+    sp.set("scope", "openid email profile");
+    if (req.query.state) {
+      sp.set("state", req.query.state);
+    }
 
-// Perform the final stage of authentication and redirect to previously requested URL or '/user'
-authRouter.get('/callback', function (req, res, next) {
-  passport.authenticate('auth0', function (err, user, info) {
-    if (err) { return next(err); }
-    if (!user) { return res.redirect('/api/login'); }
-    req.logIn(user, function (err) {
-      if (err) { return next(err); }
-      const returnTo = req.session!.returnTo;
-      delete req.session!.returnTo;
-      res.redirect(returnTo || '/api/user');
-    });
-  })(req, res, next);
-});
-
-// Perform session logout and redirect to homepage
-authRouter.get('/logout', (req, res) => {
-  req.logout();
-
-  var returnTo = req.protocol + '://' + req.hostname;
-  var port = req.connection.localPort;
-  if (port !== undefined && port !== 80 && port !== 443) {
-    returnTo += ':' + port;
+    res.redirect(url.href);
+  } else {
+    res.redirect(req.session!.returnTo);
   }
-  var logoutURL = new URL(`https://${process.env.AUTH0_DOMAIN}/v2/logout`);
-  logoutURL.searchParams.append("client_id", process.env.AUTH0_CLIENT_ID!);
-  logoutURL.searchParams.append("returnTo", returnTo);
-  res.redirect(logoutURL.href);
 });
 
-authRouter.get('/user', function (req, res, next) {
-  const { user } = req as any;
+authRouter.get('/callback', async (req, res, next) => {
+  const auth0 = getAuth0()!;
+  const { code, state } = req.query;
+  request({
+    method: "POST",
+    url: `https://${auth0.domain}/oauth/token`,
+    headers: {'content-type': 'application/x-www-form-urlencoded'},
+    form: {
+      grant_type: 'authorization_code',
+      client_id: auth0.id,
+      client_secret: auth0.secret,
+      code,
+      redirect_uri: `http://localhost:${PORT}/api/callback`
+    }
+  }, (err, r, body) => {
+    if (err) {
+      next(err);
+    }
+
+    const user = jwt.decode(JSON.parse(body).id_token);
+    req.session!.user = user;
+    res.redirect(req.session!.returnTo);
+  })
+});
+
+authRouter.post('/logout', (req, res, next) => {
+  const auth0 = getAuth0();
+  if (auth0) {
+    request(`https://${auth0.domain}/v2/logout`, (err) => {
+      if (err) {
+        next(err);
+      }
+      
+      req.session!.user = null;
+      res.sendStatus(200);
+    });
+  } else {
+    res.sendStatus(200);
+  }
+});
+
+authRouter.post('/user', function (req, res, next) {
+  const { user } = req.session!;
 
   if (user) {
     const { _raw, _json, ...userProfile } = user;

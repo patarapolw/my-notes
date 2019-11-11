@@ -50,3 +50,15 @@ class Config {
 
 export const CONFIG = new Config();
 export const SECRET: string | undefined = process.env.SECRET || CONFIG.get("SECRET");
+
+export function getAuth0(): {
+  id: string;
+  domain: string;
+  secret: string;
+} | undefined {
+  try {
+    return yaml.safeLoad(fs.readFileSync(path.join(DATA_PATH, "auth0.yaml"), "utf8"));
+  } catch(e) {
+    return CONFIG.get("AUTH0");
+  }
+}
