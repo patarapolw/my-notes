@@ -30,7 +30,7 @@ authRouter.get('/login', (req, res, next) => {
   }
 });
 
-authRouter.get('/callback', async (req, res, next) => {
+authRouter.get('/callback', (req, res, next) => {
   const auth0 = getAuth0()!;
   const { code, state } = req.query;
   request({
@@ -47,11 +47,16 @@ authRouter.get('/callback', async (req, res, next) => {
   }, (err, r, body) => {
     if (err) {
       next(err);
-    }
+    } else {
+      const user = jwt.decode(JSON.parse(body).id_token);
+      req.session!.user = user;
 
-    const user = jwt.decode(JSON.parse(body).id_token);
-    req.session!.user = user;
-    res.redirect(req.session!.returnTo);
+      const url = new URL(req.session!.returnTo);
+      if (state) {
+        url.searchParams.set("state", state);
+      }
+      res.redirect(url.href);
+    }
   })
 });
 

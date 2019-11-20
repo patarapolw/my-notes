@@ -17,8 +17,7 @@
     "allowJs": true,
     "rootDir": "src",
     "types": [
-      "express-session",
-      "passport"
+      "express-session"
     ]
   },
   "include": [
